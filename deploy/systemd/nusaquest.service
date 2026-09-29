@@ -1,0 +1,30 @@
+# Optional: manage the NUSAQUEST compose stack as a systemd service.
+#
+# Not required: with `restart: unless-stopped` and Docker enabled at boot
+# (`systemctl enable docker`), the containers already come back after a reboot. Use this
+# unit if your operations team prefers `systemctl start|stop|status nusaquest`, or wants
+# the optional profiles (https, backup) started consistently.
+#
+#   sudo cp deploy/systemd/nusaquest.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now nusaquest
+
+[Unit]
+Description=NUSAQUEST (docker compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/nusaquest
+# Profiles come from COMPOSE_PROFILES in /opt/nusaquest/.env (e.g. COMPOSE_PROFILES=https,backup).
+# Only uncomment this to override .env: a variable set here wins over .env, even an empty one.
+# Environment=COMPOSE_PROFILES=https,backup
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose stop
+TimeoutStartSec=0
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,244 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+/* Component CSS lives in the components layer so Tailwind utilities can override it. */
+@import "./styles/nusa-frame.css" layer(components);
+@import "./styles/stage.css" layer(components);
+@import "./styles/answer.css" layer(components);
+
+/*
+ * Tailwind reads ONLY our semantic palette: the default color scale is cleared so
+ * every color in the product traces back to tokens.css.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-binus-950: var(--binus-blue-950);
+  --color-binus-900: var(--binus-blue-900);
+  --color-binus-700: var(--binus-blue-700);
+  --color-binus-500: var(--binus-blue-500);
+  --color-sky: var(--binus-sky);
+  --color-energy: var(--binus-orange);
+  --color-energy-deep: var(--energy-deep);
+  --color-sun: var(--binus-yellow);
+  --color-merah: var(--nusantara-red);
+  --color-kapas: var(--nusantara-white);
+  --color-night: var(--night);
+  --color-ink: var(--ink);
+  --color-cloud: var(--cloud);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-stage: var(--stage-base);
+  --color-stage-raised: var(--stage-raised);
+  --color-stage-panel: var(--stage-panel);
+  --color-stage-line: var(--stage-line);
+  --color-stage-text: var(--stage-text);
+  --color-stage-muted: var(--stage-muted);
+  --color-stage-faint: var(--stage-faint);
+  --color-miss: var(--state-miss);
+
+  --color-ans-a: var(--ans-a);
+  --color-ans-b: var(--ans-b);
+  --color-ans-c: var(--ans-c);
+  --color-ans-d: var(--ans-d);
+
+  --color-desk: var(--desk-bg);
+  --color-desk-surface: var(--desk-surface);
+  --color-desk-sunken: var(--desk-sunken);
+  --color-desk-line: var(--desk-line);
+  --color-desk-text: var(--desk-text);
+  --color-desk-muted: var(--desk-muted);
+  --color-desk-faint: var(--desk-faint);
+  --color-desk-primary: var(--desk-primary);
+  --color-desk-rail: var(--desk-rail);
+
+  --font-sans: var(--font-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", var(--font-jakarta), ui-sans-serif, sans-serif;
+
+  /* Display scale: condensed heavy numerals are the product's signature. */
+  --text-mega: clamp(7rem, 22vw, 20rem);
+  --text-mega--line-height: 0.82;
+  --text-giga: clamp(4.5rem, 12vw, 11rem);
+  --text-giga--line-height: 0.85;
+  --text-hero: clamp(3rem, 8vw, 6.5rem);
+  --text-hero--line-height: 0.9;
+  --text-title: clamp(2rem, 4vw, 3.5rem);
+  --text-title--line-height: 1.08;
+
+  --radius-nf-tl: var(--nf-tl);
+  --radius-nf-br: var(--nf-br);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+
+  --animate-drift: nq-drift 90s linear infinite;
+  --animate-pulse-ring: nq-pulse-ring 1s ease-out infinite;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--stage-base);
+    color: var(--stage-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Creator surfaces opt into the light desk theme. */
+  .theme-desk {
+    color-scheme: light;
+    background: var(--desk-bg);
+    color: var(--desk-text);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .theme-desk :focus-visible {
+    outline-color: var(--binus-blue-500);
+  }
+
+  ::selection {
+    background: var(--binus-yellow);
+    color: var(--binus-blue-950);
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  /* Uppercase HUD labels: gameplay only, never creator UI.
+     Components layer, so text-* utilities can resize it per use. */
+  .hud-label {
+    font-family: var(--font-sans);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+}
+
+@layer utilities {
+  /* Condensed heavy display numerals: the signature voice. */
+  .font-numeral {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-variation-settings:
+      "wdth" 75,
+      "opsz" 96;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .font-display-wide {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 100%;
+    font-variation-settings:
+      "wdth" 100,
+      "opsz" 96;
+    letter-spacing: -0.035em;
+  }
+
+  .font-display-tight {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-stretch: 85%;
+    font-variation-settings:
+      "wdth" 85,
+      "opsz" 48;
+    letter-spacing: -0.02em;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Parang slash: 12° slanted edge used on progress fills and dividers. */
+  .parang-slash {
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.22em) 100%, 0 100%);
+  }
+
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes nq-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, -50%, 0);
+  }
+}
+
+@keyframes nq-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

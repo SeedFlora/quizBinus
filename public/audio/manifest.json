@@ -1,0 +1,4 @@
+{
+  "$comment": "List the cue names that have a matching <cue>.mp3 in this folder. Unlisted cues use the built-in synthesized tones. Cues: join, countdown, answer-lock, correct, incorrect, rank-up, streak, round-end, winner.",
+  "files": []
+}

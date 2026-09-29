@@ -1,0 +1,27 @@
+# Dependencies, build output, caches
+node_modules
+.next
+out
+build
+coverage
+*.tsbuildinfo
+next-env.d.ts
+package-lock.json
+
+# Test and review artefacts
+playwright-report
+test-results
+blob-report
+playwright/.cache
+.playwright-mcp
+.shots
+
+# Runtime data (uploads, backups)
+data
+uploads
+backups
+
+# Generated or vendored
+drizzle/meta
+public/**/*.svg
+public/**/*.min.*

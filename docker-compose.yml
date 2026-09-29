@@ -1,0 +1,151 @@
+# NUSAQUEST: self-hosted stack (app + PostgreSQL), e.g. on a Proxmox VM.
+#
+#   cp .env.example .env            # set POSTGRES_PASSWORD, ADMIN_EMAIL, ADMIN_PASSWORD, APP_URL
+#   docker compose up -d --build    # http://<server-ip>:3000   (health: /api/health)
+#   docker compose logs -f app      # migrations, admin bootstrap, restored sessions
+#
+# Optional profiles (combine freely):
+#   docker compose --profile https up -d     # + Caddy: automatic HTTPS for DOMAIN (deploy/Caddyfile)
+#   docker compose --profile backup up -d    # + nightly-ish pg_dump + uploads archive into ./backups
+#
+# Updating: git pull && docker compose up -d --build   (migrations run automatically at start)
+# Full runbook: docs/DEPLOYMENT.md
+#
+# Compose reads .env for ${...} interpolation. NEXT_PUBLIC_* values are build args because
+# Next.js inlines them into the browser bundle at build time; change one → rebuild
+# (docker compose build app && docker compose up -d).
+
+name: nusaquest
+
+# Rotate container logs so a busy semester never fills the disk (docker compose logs still works).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  # PostgreSQL: the durable store (lecturers, quizzes, sessions, answers, reports).
+  # Deliberately NOT published on the host: only the app (and the backup job) reach it on
+  # the internal compose network. For local tooling, see deploy/compose.dev.yml.
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nusaquest}
+      POSTGRES_USER: ${POSTGRES_USER:-nusaquest}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (e.g. openssl rand -hex 24)}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    stop_grace_period: 30s
+
+  # The Next.js server: pages, API, and the realtime game server (SSE) in one process.
+  app:
+    image: nusaquest:${APP_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_REALTIME_MODE: ${NEXT_PUBLIC_REALTIME_MODE:-server}
+        NEXT_PUBLIC_BINUS_LOGO_SRC: ${NEXT_PUBLIC_BINUS_LOGO_SRC:-}
+        APP_VERSION: ${APP_VERSION:-}
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    # Any extra runtime variable in .env reaches the server too; the explicit values below
+    # win over .env (DATABASE_URL always points at the bundled db service).
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-nusaquest}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-nusaquest}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-}
+      APP_URL: ${APP_URL:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-auto}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      UPLOAD_DIR: /app/data/uploads
+      APP_VERSION: ${APP_VERSION:-}
+      TZ: ${TZ:-Asia/Jakarta}
+    volumes:
+      - uploads:/app/data/uploads
+    # Phones connect here directly (plain HTTP on the LAN). Behind Caddy or another proxy
+    # on the same host, set APP_PORT=127.0.0.1:3000 so only the proxy can reach it.
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    # tini as PID 1: forwards SIGTERM so Next.js drains in-flight requests on stop.
+    init: true
+    stop_grace_period: 30s
+    # The server runs as the unprivileged `node` user on port 3000 and needs no capabilities.
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # Healthcheck: inherited from the image (GET /api/health via node fetch).
+
+  # Optional HTTPS front door (profile "https"). Automatic certificates for DOMAIN:
+  # Let's Encrypt for public names, Caddy's internal CA for *.local / *.internal / IPs.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    # Fail with a clear message (instead of a Caddyfile parse error) when DOMAIN is unset.
+    command:
+      - sh
+      - -c
+      - '[ -n "$$DOMAIN" ] || { echo "caddy: set DOMAIN in .env (e.g. DOMAIN=quiz.example.ac.id)" >&2; exit 1; }; exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile'
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Optional backups (profile "backup"): pg_dump (custom format) + uploads tarball every
+  # BACKUP_INTERVAL_SECONDS into ./backups, keeping BACKUP_KEEP_DAYS days.
+  # Restore: deploy/backup/restore.sh (see docs/DEPLOYMENT.md → Backups).
+  backup:
+    image: postgres:17-alpine
+    profiles: ["backup"]
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-nusaquest}
+      PGUSER: ${POSTGRES_USER:-nusaquest}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: ${TZ:-Asia/Jakarta}
+    volumes:
+      - ./deploy/backup/backup-loop.sh:/usr/local/bin/backup-loop.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+      - uploads:/uploads:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/backup-loop.sh"]
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

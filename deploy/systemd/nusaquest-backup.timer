@@ -1,0 +1,13 @@
+# Runs nusaquest-backup.service every night at 02:30 server time (outside lecture hours).
+# Persistent=true catches up on a run that was missed while the VM was powered off.
+
+[Unit]
+Description=Nightly NUSAQUEST backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

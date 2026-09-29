@@ -1,0 +1,23 @@
+# One-shot NUSAQUEST backup (database dump + uploads archive), triggered by
+# nusaquest-backup.timer. Alternative to the compose "backup" profile; use one or the other.
+#
+#   sudo cp deploy/systemd/nusaquest-backup.* /etc/systemd/system/
+#   # adjust WorkingDirectory / BACKUP_DIR below if the repo is not in /opt/nusaquest
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now nusaquest-backup.timer
+#   systemctl list-timers nusaquest-backup.timer      # next run
+#   journalctl -u nusaquest-backup.service            # logs of past runs
+
+[Unit]
+Description=NUSAQUEST backup (pg_dump + uploads)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/nusaquest
+Environment=BACKUP_DIR=/opt/nusaquest/backups
+Environment=BACKUP_KEEP_DAYS=14
+ExecStart=/usr/bin/env bash /opt/nusaquest/deploy/backup/backup.sh
+Nice=10
+IOSchedulingClass=idle

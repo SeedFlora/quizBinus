@@ -1,0 +1,326 @@
+/*
+ * NUSA FRAME: the proprietary shape.
+ *
+ *   top-left  modest radius     (--nf-tl)
+ *   top-right 45° diagonal cut  (--nf-cut)
+ *   bottom-right large radius   (--nf-br)
+ *   bottom-left square notch    (--nf-notch)
+ *
+ * The shape is painted by pseudo-elements, never by clipping the element itself,
+ * so focus rings, tooltips and overflowing children are never cut off.
+ *   ::before  → outer layer (stroke colour, or fill when no stroke)
+ *   ::after   → inner fill, inset by --nf-stroke-w
+ */
+
+.nf {
+  --nf-fill: var(--stage-raised);
+  --nf-stroke: var(--nf-fill);
+  --nf-stroke-w: 0px;
+  position: relative;
+  isolation: isolate;
+}
+
+.nf::before,
+.nf::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.nf::before {
+  inset: 0;
+  background: var(--nf-stroke);
+  border-radius: var(--nf-tl) 0 var(--nf-br) 0;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--nf-cut)) 0,
+    100% var(--nf-cut),
+    100% 100%,
+    var(--nf-notch) 100%,
+    var(--nf-notch) calc(100% - var(--nf-notch)),
+    0 calc(100% - var(--nf-notch))
+  );
+}
+
+.nf::after {
+  /* A 45° cut offset inward by w shrinks by w·(2-√2) ≈ 0.586w. */
+  --nf-in-cut: max(0px, calc(var(--nf-cut) - var(--nf-stroke-w) * 0.586));
+  --nf-in-tl: max(0px, calc(var(--nf-tl) - var(--nf-stroke-w)));
+  --nf-in-br: max(0px, calc(var(--nf-br) - var(--nf-stroke-w)));
+  inset: var(--nf-stroke-w);
+  background: var(--nf-fill);
+  border-radius: var(--nf-in-tl) 0 var(--nf-in-br) 0;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--nf-in-cut)) 0,
+    100% var(--nf-in-cut),
+    100% 100%,
+    var(--nf-notch) 100%,
+    var(--nf-notch) calc(100% - var(--nf-notch)),
+    0 calc(100% - var(--nf-notch))
+  );
+  transition:
+    background-color 160ms ease,
+    transform 140ms var(--ease-out-expo, ease-out);
+}
+
+/* Clip a child layer (pattern, media) to the parent frame's geometry. */
+.nf-clip {
+  border-radius: var(--nf-tl) 0 var(--nf-br) 0;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--nf-cut)) 0,
+    100% var(--nf-cut),
+    100% 100%,
+    var(--nf-notch) 100%,
+    var(--nf-notch) calc(100% - var(--nf-notch)),
+    0 calc(100% - var(--nf-notch))
+  );
+}
+
+/* ---- sizes ---- */
+.nf-sm {
+  --nf-tl: 6px;
+  --nf-cut: 10px;
+  --nf-br: 16px;
+  --nf-notch: 5px;
+}
+.nf-md {
+  --nf-tl: 10px;
+  --nf-cut: 18px;
+  --nf-br: 28px;
+  --nf-notch: 8px;
+}
+.nf-lg {
+  --nf-tl: 14px;
+  --nf-cut: 28px;
+  --nf-br: 44px;
+  --nf-notch: 12px;
+}
+.nf-xl {
+  --nf-tl: 18px;
+  --nf-cut: 44px;
+  --nf-br: 72px;
+  --nf-notch: 16px;
+}
+
+/* Mirrored: cut on the top-left, notch bottom-right. */
+.nf-flip::before,
+.nf-flip::after {
+  transform: scaleX(-1);
+}
+
+/* ---- surfaces ---- */
+.nf-solid {
+  --nf-fill: var(--stage-raised);
+}
+.nf-panel {
+  --nf-fill: var(--stage-panel);
+}
+.nf-outline {
+  --nf-stroke: var(--stage-line);
+  --nf-fill: var(--stage-base);
+  --nf-stroke-w: 1.5px;
+}
+.nf-ghost {
+  --nf-stroke: rgb(255 249 238 / 0.22);
+  --nf-fill: rgb(6 20 51 / 0.55);
+  --nf-stroke-w: 1.5px;
+}
+.nf-kapas {
+  --nf-fill: var(--nusantara-white);
+  color: var(--binus-blue-950);
+}
+.nf-energy {
+  --nf-fill: var(--binus-orange);
+  color: #1d0d00;
+}
+.nf-sun {
+  --nf-fill: var(--binus-yellow);
+  color: var(--binus-blue-950);
+}
+.nf-desk {
+  --nf-fill: var(--desk-surface);
+  --nf-stroke: var(--desk-line);
+  --nf-stroke-w: 1px;
+}
+
+/* A frame-shaped focus halo. drop-shadow follows the painted alpha, so the ring
+   traces the cut and notch instead of drawing a rectangle. */
+.nf-focusable:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--focus)) drop-shadow(3px 0 0 var(--focus)) drop-shadow(-3px 0 0 var(--focus))
+    drop-shadow(0 3px 0 var(--focus)) drop-shadow(0 -3px 0 var(--focus));
+}
+
+@media (forced-colors: active) {
+  .nf::before {
+    background: CanvasText;
+  }
+  .nf::after {
+    background: Canvas;
+    inset: 2px;
+  }
+  .nf-focusable:focus-visible {
+    filter: none;
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* NusaButton                                                          */
+/* ------------------------------------------------------------------ */
+/*
+ * Press depth: ::before is the "shelf" (a darker copy dropped by --btn-depth),
+ * ::after is the face. On press the face and label sink onto the shelf.
+ */
+.nq-btn {
+  --btn-face: var(--binus-orange);
+  --btn-face-hover: #ff9a3d;
+  --btn-shelf: var(--energy-deep);
+  --btn-ink: #1d0d00;
+  --btn-depth: 5px;
+  --nf-stroke: var(--btn-shelf);
+  --nf-fill: var(--btn-face);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  color: var(--btn-ink);
+  font-weight: 800;
+  line-height: 1;
+  user-select: none;
+  touch-action: manipulation;
+  margin-bottom: var(--btn-depth);
+  transition: filter 140ms ease;
+}
+
+.nq-btn::before {
+  transform: translateY(var(--btn-depth));
+}
+
+.nq-btn > .nq-btn__label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  transition: transform 140ms var(--ease-out-expo, ease-out);
+}
+
+@media (hover: hover) {
+  .nq-btn:not(:disabled):not([aria-busy="true"]):hover {
+    --nf-fill: var(--btn-face-hover);
+  }
+}
+
+.nq-btn:not(:disabled):not([aria-busy="true"]):active::after,
+.nq-btn:not(:disabled):not([aria-busy="true"]):active > .nq-btn__label,
+.nq-btn[data-pressed="true"]::after,
+.nq-btn[data-pressed="true"] > .nq-btn__label {
+  transform: translateY(calc(var(--btn-depth) - 1px));
+}
+
+.nq-btn:disabled {
+  --btn-face: #243a6b;
+  --btn-face-hover: #243a6b;
+  --btn-shelf: #1a2d57;
+  --btn-ink: rgb(255 249 238 / 0.45);
+}
+
+.nq-btn[aria-busy="true"] {
+  cursor: progress;
+}
+
+.nq-btn[data-variant="sun"] {
+  --btn-face: var(--binus-yellow);
+  --btn-face-hover: #ffd65c;
+  --btn-shelf: #c7940a;
+  --btn-ink: var(--binus-blue-950);
+}
+.nq-btn[data-variant="blue"] {
+  --btn-face: var(--binus-blue-500);
+  --btn-face-hover: #3a7ae6;
+  --btn-shelf: #123b86;
+  --btn-ink: #ffffff;
+}
+.nq-btn[data-variant="kapas"] {
+  --btn-face: var(--nusantara-white);
+  --btn-face-hover: #ffffff;
+  --btn-shelf: #b9b2a3;
+  --btn-ink: var(--binus-blue-950);
+}
+.nq-btn[data-variant="ghost"] {
+  --btn-face: rgb(255 249 238 / 0.08);
+  --btn-face-hover: rgb(255 249 238 / 0.14);
+  --btn-shelf: rgb(255 249 238 / 0.06);
+  --btn-ink: var(--nusantara-white);
+  --btn-depth: 3px;
+}
+.nq-btn[data-variant="danger"] {
+  --btn-face: var(--danger);
+  --btn-face-hover: #ff7266;
+  --btn-shelf: #b23a30;
+  --btn-ink: #2a0500;
+}
+.nq-btn[data-variant="desk"] {
+  --btn-face: var(--binus-blue-500);
+  --btn-face-hover: #3a7ae6;
+  --btn-shelf: #123b86;
+  --btn-ink: #ffffff;
+  --btn-depth: 3px;
+}
+.nq-btn[data-variant="desk-quiet"] {
+  --btn-face: var(--desk-surface);
+  --btn-face-hover: var(--desk-sunken);
+  --btn-shelf: var(--desk-line);
+  --btn-ink: var(--desk-text);
+  --btn-depth: 3px;
+}
+
+.nq-btn[data-size="sm"] {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 0.875rem;
+}
+.nq-btn[data-size="md"] {
+  min-height: 48px;
+  padding: 0 22px;
+  font-size: 1rem;
+}
+.nq-btn[data-size="lg"] {
+  min-height: 60px;
+  padding: 0 28px;
+  font-size: 1.125rem;
+  letter-spacing: 0.02em;
+}
+.nq-btn[data-size="xl"] {
+  --btn-depth: 7px;
+  min-height: 84px;
+  padding: 0 44px;
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+}
+
+.nq-btn:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--focus)) drop-shadow(3px 0 0 var(--focus)) drop-shadow(-3px 0 0 var(--focus))
+    drop-shadow(0 3px 0 var(--focus)) drop-shadow(0 -3px 0 var(--focus));
+}
+
+.theme-desk .nq-btn:focus-visible {
+  --focus: var(--binus-blue-500);
+}
+
+@media (forced-colors: active) {
+  .nq-btn {
+    border: 2px solid ButtonText;
+  }
+  .nq-btn:focus-visible {
+    filter: none;
+    outline: 3px solid Highlight;
+  }
+}

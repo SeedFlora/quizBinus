@@ -1,0 +1,85 @@
+/*
+ * NUSAQUEST design tokens.
+ *
+ * ⚠ PROJECT TOKENS — visually inspired by BINUS University's public visual language
+ * (institutional blue + orange/yellow energy). NOT the official BINUS Graphic
+ * Standard Manual. To adopt official values, replace the primitives in this block
+ * only; components consume the semantic layer below.
+ */
+:root {
+  /* ---- primitives: institution-inspired ---- */
+  --binus-blue-950: #061433;
+  --binus-blue-900: #0b2150;
+  --binus-blue-700: #153c8c;
+  --binus-blue-500: #2266d9;
+  --binus-sky: #46b8f4;
+  --binus-orange: #f7861f;
+  --binus-yellow: #ffc82e;
+
+  /* ---- primitives: Indonesian celebration ---- */
+  --nusantara-red: #e0262f;
+  --nusantara-white: #fff9ee;
+
+  /* ---- primitives: neutrals + status ---- */
+  --night: #020918;
+  --ink: #0a1633;
+  --cloud: #eef2f9;
+  --success: #1fcf93;
+  --warning: #ffb224;
+  --danger: #ff5a4d;
+
+  /* ---- semantic: stage (player + host) ---- */
+  --stage-base: var(--binus-blue-950);
+  --stage-raised: var(--binus-blue-900);
+  --stage-panel: #0f2a60;
+  --stage-line: rgb(255 249 238 / 0.12);
+  --stage-text: var(--nusantara-white);
+  --stage-muted: rgb(255 249 238 / 0.64);
+  --stage-faint: rgb(255 249 238 / 0.38);
+  --energy: var(--binus-orange);
+  --energy-deep: #c2600a;
+  --score: var(--binus-yellow);
+  --focus: var(--binus-yellow);
+  --state-hit: var(--binus-yellow);
+  --state-miss: #7c8db5;
+  --celebrate-a: var(--nusantara-red);
+  --celebrate-b: var(--nusantara-white);
+
+  /* ---- semantic: answers (color + symbol + letter + position) ---- */
+  --ans-a: var(--binus-sky);
+  --ans-a-ink: #04203a;
+  --ans-b: var(--binus-orange);
+  --ans-b-ink: #2b1400;
+  --ans-c: var(--nusantara-white);
+  --ans-c-ink: var(--binus-blue-950);
+  --ans-d: var(--binus-yellow);
+  --ans-d-ink: #2a1d00;
+
+  /* ---- semantic: creator (light canvas) ---- */
+  --desk-bg: var(--cloud);
+  --desk-surface: #ffffff;
+  --desk-sunken: #e3e9f4;
+  --desk-line: #d3dcec;
+  --desk-text: var(--ink);
+  --desk-muted: #4b5a7a;
+  --desk-faint: #8593b0;
+  --desk-primary: var(--binus-blue-500);
+  --desk-rail: var(--binus-blue-950);
+
+  /* ---- NUSA FRAME geometry (md default) ---- */
+  --nf-tl: 10px;
+  --nf-cut: 18px;
+  --nf-br: 28px;
+  --nf-notch: 8px;
+
+  /* ---- pattern opacity ---- */
+  --pattern-quiet: 0.04;
+  --pattern-soft: 0.07;
+  --pattern-loud: 0.1;
+
+  /* ---- layout ---- */
+  --host-safe: clamp(24px, 3.4vw, 64px);
+  --player-gutter: 16px;
+
+  color-scheme: dark;
+}

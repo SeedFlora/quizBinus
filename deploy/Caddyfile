@@ -1,0 +1,39 @@
+# NUSAQUEST behind Caddy (docker compose --profile https up -d).
+#
+# DOMAIN comes from .env. Caddy obtains and renews the certificate automatically:
+#   - a public DNS name (quiz.example.ac.id) → Let's Encrypt / ZeroSSL. Ports 80 and 443
+#     must be reachable from the internet for the ACME challenge, and DNS must point here.
+#   - localhost, *.local, *.internal, *.home.arpa or an IP address → Caddy's internal CA
+#     (self-signed; every phone must trust it, so this is for staff testing only).
+# Certificates live in the caddy_data volume; keep it across updates.
+{
+	# Uncomment to receive certificate expiry notices:
+	# email admin@example.ac.id
+}
+
+{$DOMAIN} {
+	# Compress pages and assets, but never the live event stream (SSE must flush frame by frame).
+	@compressible not path /api/sessions/*/events
+	encode @compressible zstd gzip
+
+	reverse_proxy app:3000 {
+		# Flush every write immediately: required for Server-Sent Events
+		# (POST /api/sessions/<id>/events). Heartbeats arrive every 15 s.
+		flush_interval -1
+
+		# Rate limits key on the client IP. Caddy already replaces X-Forwarded-For and
+		# X-Forwarded-Proto with the real peer values; also set X-Real-IP and drop a
+		# client-supplied CF-Connecting-IP so students cannot pick their own bucket.
+		header_up X-Real-IP {remote_host}
+		header_up -CF-Connecting-IP
+	}
+
+	# Security headers the app does not set itself (it already sends nosniff, Referrer-Policy,
+	# X-Frame-Options and Permissions-Policy). HSTS only makes sense once HTTPS is permanent.
+	header Strict-Transport-Security "max-age=31536000"
+
+	log {
+		output stdout
+		format console
+	}
+}

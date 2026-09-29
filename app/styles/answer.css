@@ -1,0 +1,179 @@
+/*
+ * Answer bar. Navy by default with a coloured symbol chip; colour floods the bar
+ * only when the answer is chosen or revealed. Identity = colour + symbol + letter
+ * + position, so the bar remains unambiguous without colour perception.
+ */
+.nq-answer {
+  --slot: var(--ans-a);
+  --slot-ink: var(--ans-a-ink);
+  --nf-fill: var(--stage-raised);
+  --nf-stroke: color-mix(in oklab, var(--slot) 38%, transparent);
+  --nf-stroke-w: 2px;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 18px 8px 8px;
+  text-align: left;
+  color: var(--stage-text);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    opacity 220ms ease,
+    filter 160ms ease;
+}
+
+.nq-answer[data-slot="1"] {
+  --slot: var(--ans-b);
+  --slot-ink: var(--ans-b-ink);
+}
+.nq-answer[data-slot="2"] {
+  --slot: var(--ans-c);
+  --slot-ink: var(--ans-c-ink);
+}
+.nq-answer[data-slot="3"] {
+  --slot: var(--ans-d);
+  --slot-ink: var(--ans-d-ink);
+}
+
+.nq-answer__chip {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: var(--slot-ink);
+  --nf-fill: var(--slot);
+}
+
+.nq-answer__letter {
+  color: var(--slot);
+  font-size: 1.75rem;
+  line-height: 1;
+  min-width: 0.9em;
+}
+
+.nq-answer__text {
+  font-weight: 700;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.nq-answer__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (hover: hover) {
+  .nq-answer[data-state="idle"]:not(:disabled):hover {
+    --nf-fill: #10306e;
+    --nf-stroke: var(--slot);
+  }
+}
+
+/* selected / locked / correct: colour floods the bar */
+.nq-answer[data-state="selected"],
+.nq-answer[data-state="locked"],
+.nq-answer[data-state="correct"] {
+  --nf-fill: var(--slot);
+  --nf-stroke: var(--slot);
+  color: var(--slot-ink);
+}
+.nq-answer[data-state="selected"] .nq-answer__chip,
+.nq-answer[data-state="locked"] .nq-answer__chip,
+.nq-answer[data-state="correct"] .nq-answer__chip {
+  --nf-fill: var(--slot-ink);
+  color: var(--slot);
+}
+.nq-answer[data-state="selected"] .nq-answer__letter,
+.nq-answer[data-state="locked"] .nq-answer__letter,
+.nq-answer[data-state="correct"] .nq-answer__letter {
+  color: var(--slot-ink);
+}
+
+.nq-answer[data-state="correct"] {
+  filter: drop-shadow(0 0 22px color-mix(in oklab, var(--slot) 45%, transparent));
+}
+
+/* your pick, revealed as not correct: slate, never red */
+.nq-answer[data-state="wrong-pick"] {
+  --nf-fill: color-mix(in oklab, var(--state-miss) 32%, var(--stage-base));
+  --nf-stroke: var(--state-miss);
+}
+
+.nq-answer[data-state="dimmed"] {
+  opacity: 0.36;
+}
+
+.nq-answer:disabled {
+  cursor: default;
+}
+
+.nq-answer:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--focus)) drop-shadow(3px 0 0 var(--focus)) drop-shadow(-3px 0 0 var(--focus))
+    drop-shadow(0 3px 0 var(--focus)) drop-shadow(0 -3px 0 var(--focus));
+}
+
+/* distribution fill (host reveal): sits above the frame fill (::after, z -1)
+   and below the content, which is lifted to z 1. */
+.nq-answer > :not(.nq-answer__bar) {
+  position: relative;
+  z-index: 1;
+}
+.nq-answer__bar {
+  position: absolute;
+  inset: 2px auto 2px 2px;
+  z-index: 0;
+  background: color-mix(in oklab, var(--slot) 26%, transparent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  border-radius: 8px 0 0 0;
+  transform-origin: left center;
+}
+
+/* ---- host size ---- */
+.nq-answer[data-size="host"] {
+  --nf-tl: 14px;
+  --nf-cut: 30px;
+  --nf-br: 44px;
+  --nf-notch: 12px;
+  --nf-stroke-w: 3px;
+  gap: 22px;
+  min-height: clamp(84px, 11vh, 132px);
+  padding: 12px 36px 12px 12px;
+}
+.nq-answer[data-size="host"] .nq-answer__chip {
+  width: clamp(64px, 8.5vh, 100px);
+  height: clamp(64px, 8.5vh, 100px);
+}
+.nq-answer[data-size="host"] .nq-answer__letter {
+  font-size: clamp(2.5rem, 5.5vh, 4rem);
+}
+.nq-answer[data-size="host"] .nq-answer__text {
+  font-size: clamp(1.5rem, 3.4vh, 2.5rem);
+  line-height: 1.15;
+}
+.nq-answer[data-size="host"] .nq-answer__status {
+  font-size: clamp(1.25rem, 2vh, 1.75rem);
+}
+.nq-answer[data-size="host"] .nq-answer__count {
+  font-size: clamp(2.5rem, 5.5vh, 4.25rem);
+}
+
+@media (forced-colors: active) {
+  .nq-answer[data-state="selected"],
+  .nq-answer[data-state="locked"],
+  .nq-answer[data-state="correct"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+}

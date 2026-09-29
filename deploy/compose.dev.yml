@@ -1,0 +1,14 @@
+# Development overlay: publish the compose PostgreSQL on the loopback interface so
+# `npm run dev`, `npm run db:studio` or psql on the same machine can use it.
+#
+#   docker compose -f docker-compose.yml -f deploy/compose.dev.yml up -d db     # (= npm run db:up)
+#   # .env.local:
+#   DATABASE_URL=postgres://nusaquest:<POSTGRES_PASSWORD>@localhost:5432/nusaquest
+#
+# Never use this overlay on a production server; production keeps the database private
+# to the compose network.
+
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"

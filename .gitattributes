@@ -1,0 +1,15 @@
+# Normalise line endings: the repo is developed on Windows but built in Linux containers
+# and CI, where CRLF breaks shell scripts and Dockerfile heredocs.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.woff binary
+*.woff2 binary
